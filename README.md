@@ -1,5 +1,7 @@
 # pdf-to-excel
 
+[![ci](https://github.com/chasebuilds/pdf-to-excel/actions/workflows/ci.yml/badge.svg)](https://github.com/chasebuilds/pdf-to-excel/actions/workflows/ci.yml) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Turns a folder of invoice PDFs into one Excel workbook, with a confidence score on every field and a review sheet that lists anything doubtful and why.
 
 ![An invoice PDF on the left and the extracted fields with confidence scores on the right](docs/preview.png)
