@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pdf-to-excel"
+version = "0.1.0"
+description = "Invoice PDFs to one Excel workbook, with a confidence score on every field and a review sheet."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Chase Builds" }]
+dependencies = [
+    "pdfplumber>=0.11",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "reportlab>=4",
+    "pymupdf>=1.24",
+]
+
+[project.scripts]
+pdf-to-excel = "pdf_to_excel.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pdf_to_excel"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "benchmark", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pdf_to_excel", "benchmark"]
+
+[tool.ruff.lint.per-file-ignores]
+# report text and dense drawing code read better unwrapped
+"benchmark/*.py" = ["E501"]
