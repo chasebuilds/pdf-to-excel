@@ -22,8 +22,9 @@ Scored = tuple[float, Decimal, Candidate]
 def _money_candidates(finder: FieldFinder, name: str) -> list[Scored]:
     out: list[Scored] = []
     for m, ms in finder.matches(name):
-        parsed = [(c, parse_money(c.text, finder.decimal_comma)) for c in right_cells(m, ms)]
-        parsed = [(c, v) for c, v in parsed if v]
+        parsed = [
+            (c, v) for c in right_cells(m, ms) if (v := parse_money(c.text, finder.decimal_comma))
+        ]
         if parsed:
             cell, money = parsed[-1]  # amounts sit at the right end of a totals row
             cand, pos = Candidate(cell, 1.0, "right", m), 1.0
@@ -88,14 +89,20 @@ def _totals(finder: FieldFinder, items: list[LineItem], result: InvoiceResult) -
     line_sum = sum((i.amount for i in items if i.amount is not None), Decimal(0)) if items else None
 
     # Row arithmetic
-    checkable = [i for i in items if i.quantity is not None and i.unit_price is not None]
+    checkable = [
+        (q, p, a)
+        for i in items
+        if (q := i.quantity) is not None
+        and (p := i.unit_price) is not None
+        and (a := i.amount) is not None
+    ]
     if checkable:
-        bad = [i for i in checkable if abs(i.quantity * i.unit_price - i.amount) > Decimal("0.011")]
+        bad = sum(1 for q, p, a in checkable if abs(q * p - a) > Decimal("0.011"))
         result.checks.append(
             Check(
                 "line amount = quantity x unit price",
                 not bad,
-                f"{len(bad)} of {len(checkable)} rows fail" if bad else f"{len(checkable)} rows",
+                f"{bad} of {len(checkable)} rows fail" if bad else f"{len(checkable)} rows",
             )
         )
 

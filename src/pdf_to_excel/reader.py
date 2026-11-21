@@ -9,7 +9,7 @@ from functools import cached_property
 from pathlib import Path
 
 import pdfplumber
-from pdfplumber.utils import extract_words
+from pdfplumber.utils.text import extract_words
 
 # Below this many characters a page with a large image is treated as a scan.
 SCAN_MAX_CHARS = 20

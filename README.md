@@ -71,6 +71,8 @@ pdf-to-excel my_invoices/ -o out.xlsx --threshold 0.9     # stricter: more goes 
 pdf-to-excel my_invoices/ -o out.xlsx --json out.json     # also write raw results
 pdf-to-excel my_invoices/ -o out.xlsx --audit-sample 10   # spot check 10 passed invoices
 python -m pytest                                          # tests, all offline
+python -m pytest --cov                                    # tests with a coverage report
+python -m mypy                                            # type check src/ (settings in pyproject.toml)
 python -m benchmark.run_benchmark                         # regenerate data, rewrite BENCHMARK.md
 ```
 

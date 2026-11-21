@@ -101,6 +101,7 @@ def write_workbook(
     wb = Workbook()
 
     inv = wb.active
+    assert isinstance(inv, Worksheet)  # a new Workbook always starts with one worksheet
     inv.title = "Invoices"
     conf_cols = [f"{n}_conf" for n in SCALAR_FIELDS]
     _header(
@@ -128,9 +129,9 @@ def write_workbook(
                 cell.number_format = "#,##0.00"
             elif name in DATE_FIELDS:
                 cell.number_format = "yyyy-mm-dd"
-        status = inv.cell(row=row, column=len(SCALAR_FIELDS) + 4)
-        if status.value != "OK":
-            status.fill = YELLOW
+        status_cell = inv.cell(row=row, column=len(SCALAR_FIELDS) + 4)
+        if status_cell.value != "OK":
+            status_cell.fill = YELLOW
     _fit(inv)
 
     li = wb.create_sheet("LineItems")
@@ -179,8 +180,8 @@ def write_workbook(
         ],
     )
     for r in results:
-        for row in review_rows(r, threshold):
-            rv.append(row)
+        for review_row in review_rows(r, threshold):
+            rv.append(review_row)
     audit = pick_audit_sample(results, threshold, audit_sample)
     for r in audit:
         why = (

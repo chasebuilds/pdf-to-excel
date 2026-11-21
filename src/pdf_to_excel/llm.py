@@ -14,6 +14,7 @@ from collections.abc import Callable
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from typing import Any
 
 from .models import DEFAULT_THRESHOLD, SCALAR_FIELDS, Field, InvoiceResult
 from .parsing import parse_date, parse_money
@@ -33,14 +34,17 @@ Invoice text:
 {text}"""
 
 
-def _post(payload: dict, url: str = OLLAMA_URL, timeout: float = 120.0) -> dict:
+def _post(payload: dict, url: str = OLLAMA_URL, timeout: float = 120.0) -> dict[str, Any]:
     if not url.startswith(("http://localhost", "http://127.0.0.1", "http://[::1]")):
         raise ValueError("the model fallback only talks to a local server")
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json"}
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 (local only, checked above)
-        return json.loads(resp.read())
+        data = json.loads(resp.read())
+    if not isinstance(data, dict):
+        raise ValueError("the local model server returned something other than a JSON object")
+    return data
 
 
 def _coerce(name: str, value: object) -> object:

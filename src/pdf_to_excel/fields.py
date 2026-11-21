@@ -6,6 +6,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 from .labels import LabelMatch, find_labels, tokens_of
 from .models import Field
@@ -173,7 +174,7 @@ class FieldFinder:
         return self._pick(scored, "invoice number", bump_sole=True)
 
     def _pick(
-        self, scored: list[tuple[float, object, Candidate]], what: str, bump_sole: bool = False
+        self, scored: list[tuple[float, Any, Candidate]], what: str, bump_sole: bool = False
     ) -> Field:
         if not scored:
             return Field(reasons=[f"no {what} label with a usable value"])
@@ -260,7 +261,7 @@ class FieldFinder:
             return
         if self.decimal_comma:
             for i in amb:
-                fields[i].value = parsed[i].alt
+                fields[i].value = p.alt if (p := parsed[i]) else None
                 fields[i].lower(0.85, "day/month order inferred from comma decimals (day first)")
             return
         for i in amb:

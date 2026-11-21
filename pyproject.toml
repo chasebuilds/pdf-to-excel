@@ -27,6 +27,9 @@ dev = [
     "ruff>=0.6",
     "reportlab>=4",
     "pymupdf>=1.24",
+    "mypy>=1.10",
+    "types-openpyxl",
+    "pytest-cov>=5",
 ]
 
 [project.scripts]
@@ -38,6 +41,26 @@ packages = ["src/pdf_to_excel"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.mypy]
+files = ["src/pdf_to_excel"]
+python_version = "3.11"
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_reexport = true
+strict_equality = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[tool.coverage.run]
+source = ["pdf_to_excel"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
 
 [tool.ruff]
 line-length = 100

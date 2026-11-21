@@ -17,7 +17,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e ".[dev,api]"
       - run: ruff check .
-      - run: pytest -q
+      - run: mypy
+      - run: pytest -q --cov --cov-report=term
 
   docker:
     runs-on: ubuntu-latest

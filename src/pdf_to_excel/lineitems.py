@@ -88,9 +88,9 @@ def find_header(line: Line) -> list[Column] | None:
         if roles is None:
             return None
         cols.extend(roles)
-    roles = [c.role for c in cols]
-    numeric = {r for r in roles if r in NUMERIC_ROLES}
-    if roles.count("description") == 1 and "amount" in numeric and len(numeric) >= 2:
+    names = [c.role for c in cols]
+    numeric = {r for r in names if r in NUMERIC_ROLES}
+    if names.count("description") == 1 and "amount" in numeric and len(numeric) >= 2:
         return cols
     return None
 
@@ -254,8 +254,8 @@ def _without_header(doc: Document, decimal_comma: bool) -> Table:
         if len(cells) < 4 or _is_totals_line(ln, decimal_comma):
             continue
         tail = cells[-3:]
-        nums = [parse_money(c.text, decimal_comma) for c in tail]
-        if not all(nums):
+        nums = [m for c in tail if (m := parse_money(c.text, decimal_comma))]
+        if len(nums) < 3:
             continue
         a, b, c = (n.amount for n in nums)
         desc = " ".join(x.text for x in cells[:-3])
@@ -279,18 +279,16 @@ def extract_line_items(doc: Document, decimal_comma: bool) -> Table:
     if not table.items:
         table.reasons.append("no line item table found")
     for item in table.items:
-        ok = _row_ok(item.quantity, item.unit_price, item.amount)
-        if ok:
-            item.confidence = min(0.99, item.confidence + 0.05)
-        elif ok is False:
-            item.confidence = 0.5
-            item.reasons.append(
-                f"quantity x unit price = {item.quantity * item.unit_price:.2f}, not {item.amount}"
-            )
-        else:
+        q, p, a = item.quantity, item.unit_price, item.amount
+        if q is None or p is None or a is None:
             item.confidence = min(item.confidence, 0.7)
-            missing = "quantity" if item.quantity is None else "unit price"
+            missing = "quantity" if q is None else "unit price"
             item.reasons.append(f"{missing} not found, row cannot be checked")
+        elif _row_ok(q, p, a):
+            item.confidence = min(0.99, item.confidence + 0.05)
+        else:
+            item.confidence = 0.5
+            item.reasons.append(f"quantity x unit price = {q * p:.2f}, not {a}")
     return table
 
 
