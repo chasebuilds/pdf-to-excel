@@ -11,7 +11,7 @@ What this tool does not do, and where it is known to be weak. Numbers quoted her
 
 ## Not supported
 
-- **OCR.** Scanned, image-only PDFs are detected (a page with almost no text and an image covering most of it) and listed in the Review sheet as needing OCR. They are not read, and there is no `--ocr` option. If a scan already has a text layer from someone else's OCR, that layer is read as it is, mistakes included.
+- **OCR.** Scanned, image-only PDFs are detected (a page with almost no text and an image covering most of it) and listed in the Review sheet as needing OCR. They are not read, and there is no `--ocr` option. If a scan already has a text layer from someone else's OCR, that layer is read as it is, mistakes included. A tilt of 0.3 to 15 degrees in that layer is measured and straightened first (tested on one sample invoice at 1.5, 3 and 5 degrees and a blurred copy, `python -m benchmark.skew`). Steeper tilts, curved or warped pages, and pages where different blocks lean different ways are not handled.
 - **Subtly wrong text layers.** A text layer that is obvious garbage ("(cid:12)" codes, or mostly symbols) is caught and reported as `BAD TEXT LAYER`. A layer that looks like text but has wrong characters (an OCR pass that read 8 as 3) is not caught, except where the arithmetic checks happen to expose it.
 - **E-invoice attachments.** Factur-X and ZUGFeRD PDFs carry the invoice as embedded XML. This tool does not read the attachment. It reads the visible page like any other PDF.
 - **Fillable form PDFs.** Values typed into form fields are not read.

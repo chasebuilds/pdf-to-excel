@@ -228,3 +228,26 @@ def test_ampersand_stays_in_a_name_after_a_label(text_pdf):
         [(50, 50, "Cedar Lane Catering"), (50, 90, "Customer"), (150, 90, "Oakline & Sons")]
     )
     assert extract_invoice(path).get("bill_to").value == "Oakline & Sons"
+
+
+def test_tilted_page_does_not_pass_scattered_letters_as_the_vendor(tmp_path):
+    # a page scanned at a slight angle breaks words into single letters; those must not
+    # come back as a confident seller name
+    from reportlab.lib.pagesizes import LETTER
+    from reportlab.pdfgen.canvas import Canvas
+
+    path = tmp_path / "tilted.pdf"
+    c = Canvas(str(path), pagesize=LETTER, invariant=1)
+    c.rotate(1.5)
+    c.setFont("Helvetica-Bold", 18)
+    c.drawString(50, 740, "Bluegrass Print & Sign Co.")
+    c.setFont("Helvetica", 10)
+    c.drawString(50, 726, "212 Main St, Lexington KY 40507")
+    c.drawString(400, 718, "Inv #")
+    c.drawRightString(560, 718, "BG-10442")
+    c.drawString(50, 690, "Sold To:")
+    c.drawString(50, 676, "Smith Plumbing Supply")
+    c.save()
+    f = extract_invoice(path).get("vendor")
+    scattered = f.value and sum(len(t) == 1 for t in f.value.split()) * 2 > len(f.value.split())
+    assert not (scattered and f.confidence >= DEFAULT_THRESHOLD), (f.value, f.confidence)

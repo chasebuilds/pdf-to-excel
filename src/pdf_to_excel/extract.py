@@ -225,7 +225,8 @@ def _tax_rate_check(result: InvoiceResult, sub: Field, tax: Field, line_text: st
         tax.lower(0.85, f"tax {tax.value} is not {rate}% of subtotal {sub.value}")
 
 
-def extract_invoice(path: str | Path) -> InvoiceResult:
+def extract_invoice(path: str | Path, deskew: bool = True) -> InvoiceResult:
+    """Read one invoice. ``deskew=False`` skips straightening tilted pages (for comparison)."""
     path = Path(path)
     result = InvoiceResult(file=path.name)
 
@@ -236,7 +237,7 @@ def extract_invoice(path: str | Path) -> InvoiceResult:
 
     try:
         result.sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
-        doc = read_pdf(path)
+        doc = read_pdf(path, deskew=deskew)
     except Exception as exc:  # a broken PDF must not stop a batch
         if "password" in f"{type(exc).__name__} {exc!r}".lower():
             return stop("ENCRYPTED", "Password-protected PDF: send an unlocked copy.")
@@ -268,6 +269,11 @@ def extract_invoice(path: str | Path) -> InvoiceResult:
     if doc.rotated_pages:
         pages = ", ".join(map(str, doc.rotated_pages))
         result.file_notes.append(f"page(s) {pages} are rotated: reading order may be wrong")
+    for p in doc.pages:
+        if p.skew:
+            result.file_notes.append(
+                f"page {p.number} was tilted {abs(p.skew)} degrees and was straightened first"
+            )
 
     decimal_comma = detect_decimal_comma([ln.text for ln in doc.lines])
     result.decimal_comma = decimal_comma

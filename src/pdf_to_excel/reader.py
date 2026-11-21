@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 
 import pdfplumber
+from pdfplumber.utils import extract_words
 
 # Below this many characters a page with a large image is treated as a scan.
 SCAN_MAX_CHARS = 20
 SCAN_MIN_IMAGE_COVERAGE = 0.5
 # Real invoices are mostly letters and digits. Far below this the text layer is garbage.
 BAD_TEXT_MIN_ALNUM = 0.5
+# A phone scan or a scanner's OCR layer is often a degree or a few off. Below MIN the
+# line grouping copes; above MAX it is not a crooked page but a deliberate layout.
+SKEW_MIN_DEG = 0.3
+SKEW_MAX_DEG = 15.0
 
 _GLUED = re.compile(r"^([A-Za-z#.]{2,}:)(\S+)$")
 
@@ -103,6 +109,7 @@ class Page:
     char_count: int = 0
     image_coverage: float = 0.0
     rotation: int = 0
+    skew: float = 0.0  # degrees the text was tilted and straightened back
 
     @property
     def scanned(self) -> bool:
@@ -149,6 +156,10 @@ class Document:
     def rotated_pages(self) -> list[int]:
         return [p.number for p in self.pages if p.rotation % 360]
 
+    @property
+    def skewed_pages(self) -> list[int]:
+        return [p.number for p in self.pages if p.skew]
+
 
 def _unglue(w: Word) -> list[Word]:
     """Split "No:12345" into label and value so the label matcher sees both."""
@@ -177,12 +188,71 @@ def _group_lines(words: list[Word], page: int) -> list[Line]:
     return [Line(sorted(ws, key=lambda w: w.x0), page) for ws in lines]
 
 
-def read_pdf(path: str | Path) -> Document:
+def estimate_skew(chars: list[dict]) -> float:
+    """Angle of the text baselines in degrees, counter-clockwise positive.
+
+    Taken from the step between neighbouring glyph origins inside a word, so it works
+    both for text drawn rotated and for an OCR layer that places upright glyphs along a
+    tilted line. The median ignores superscripts, kerning and the odd stray glyph.
+    """
+    slopes = []
+    for a, b in zip(chars, chars[1:], strict=False):
+        if not (a.get("matrix") and b.get("matrix")) or a["size"] != b["size"]:
+            continue
+        dx, dy = b["matrix"][4] - a["matrix"][4], b["matrix"][5] - a["matrix"][5]
+        if 0 < dx < 1.5 * a["size"] and abs(dy) < 0.5 * dx:
+            slopes.append(math.degrees(math.atan2(dy, dx)))
+    if len(slopes) < 10:
+        return 0.0
+    slopes.sort()
+    return slopes[len(slopes) // 2]
+
+
+def straighten(chars: list[dict], angle: float, width: float, height: float) -> list[dict]:
+    """Rotate glyph boxes back by ``angle`` about the page centre."""
+    t = math.radians(angle)
+    cos, sin = math.cos(t), math.sin(t)
+    cx, cy = width / 2, height / 2
+    den = cos * cos - sin * sin
+    out = []
+    for c in chars:
+        # a w x h box turned by t has a bounding box of (w cos + h sin) x (w sin + h cos)
+        bw, bh = c["x1"] - c["x0"], c["bottom"] - c["top"]
+        w = max((bw * cos - bh * abs(sin)) / den, 0.1)
+        h = max((bh * cos - bw * abs(sin)) / den, 0.1)
+        dx, dy = (c["x0"] + c["x1"]) / 2 - cx, cy - (c["top"] + c["bottom"]) / 2  # y up
+        mx, my = cx + dx * cos + dy * sin, cy - (-dx * sin + dy * cos)  # back to y down
+        top = my - h / 2
+        out.append(
+            c
+            | {
+                "x0": mx - w / 2,
+                "x1": mx + w / 2,
+                "top": top,
+                "bottom": top + h,
+                "doctop": c["doctop"] - c["top"] + top,
+                "y0": height - top - h,
+                "y1": height - top,
+                "width": w,
+                "height": h,
+                "size": round(h, 1),  # words split on any size change
+                "upright": True,
+            }
+        )
+    return out
+
+
+def read_pdf(path: str | Path, deskew: bool = True) -> Document:
     path = Path(path)
     pages: list[Page] = []
     with pdfplumber.open(path) as pdf:
         for number, pg in enumerate(pdf.pages, start=1):
-            raw = pg.extract_words(x_tolerance=2, y_tolerance=2, extra_attrs=["size"])
+            chars, skew = pg.chars, 0.0
+            if deskew:
+                angle = estimate_skew(chars)
+                if SKEW_MIN_DEG <= abs(angle) <= SKEW_MAX_DEG:
+                    chars, skew = straighten(chars, angle, float(pg.width), float(pg.height)), angle
+            raw = extract_words(chars, x_tolerance=2, y_tolerance=2, extra_attrs=["size"])
             words = [
                 part
                 for r in raw
@@ -213,6 +283,7 @@ def read_pdf(path: str | Path) -> Document:
                     char_count=sum(len(w.text) for w in words),
                     image_coverage=min(1.0, covered / area),
                     rotation=int(getattr(pg, "rotation", 0) or 0),
+                    skew=round(skew, 1),
                 )
             )
     index = 0

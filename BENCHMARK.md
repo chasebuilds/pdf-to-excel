@@ -6,7 +6,7 @@ Written by `benchmark/run_benchmark.py` from a real run. Do not edit by hand: re
 - Pages read: 576, line items in ground truth: 5748
 - Generator seed: `20261120`, confidence threshold: `0.8`
 - Local model fallback: **off** (all numbers are from deterministic code)
-- Python 3.14.3, pdfplumber 0.11.11, 0.03 s per PDF on the test machine
+- Python 3.14.3, pdfplumber 0.11.11, 0.02 s per PDF on the test machine
 - All data is synthetic. See the caveats under "How the split works" before quoting these numbers.
 
 ## Headline

@@ -305,8 +305,12 @@ class FieldFinder:
         def name_like(cell: Cell) -> bool:
             t = cell.text.strip()
             low = re.sub(r"[^a-z ]", "", t.lower()).strip()
+            tokens = t.split()
+            # mostly one-letter pieces: letter-spaced type, or words broken apart by a tilted page
+            scattered = len(tokens) > 2 and sum(len(x) == 1 for x in tokens) * 2 > len(tokens)
             return (
-                bool(re.search(r"[A-Za-z]{2}", t))
+                not scattered
+                and bool(re.search(r"[A-Za-z]{2}", t))
                 and low not in TITLE_WORDS
                 and not re.match(r"^[\d(+#]", t)
                 and not re.search(r"@|www\.|https?:|\d{4,}", t)

@@ -105,6 +105,22 @@ Files that cannot be read as an invoice are never guessed at. Each gets a plain 
 | `NO TEXT`, `EMPTY` | Blank pages, or no pages. |
 | `ERROR` | Not a readable PDF. The batch carries on. |
 
+### Tilted pages
+
+A phone scanner app or a scanner's OCR step often saves the text layer a degree or a few off. Read as it is, the words break up into single letters and almost nothing comes back. The reader measures the tilt from the text itself (the step between neighbouring letters), and if it is between 0.3 and 15 degrees it turns the text back straight before reading. The Review sheet gets a file note saying the page was straightened and by how much.
+
+Measured on `samples/skewed/`, copies of `samples/invoices/01_classic_us.pdf` made by `python -m benchmark.skew` (9 header fields, 10 line items):
+
+| File | Fields right, deskew off | Fields right, deskew on | Mean confidence off / on | Line items off / on |
+|---|---|---|---|---|
+| straight original | 9/9 | 9/9 | 0.95 / 0.95 | 10 / 10 |
+| tilted 1.5 degrees | 0/9 | 9/9 | 0.10 / 0.95 | 0 / 10 |
+| tilted 3 degrees | 1/9 | 9/9 | 0.18 / 0.95 | 0 / 10 |
+| tilted 5 degrees | 1/9 | 9/9 | 0.18 / 0.95 | 0 / 10 |
+| blurred phone scan, 3 degrees, text layer underneath | 1/9 | 9/9 | 0.18 / 0.95 | 0 / 10 |
+
+With deskew on, every field is right and above the threshold, the same as the straight copy. This needs a text layer: a tilted photo with no text layer is still `NEEDS OCR`.
+
 ### Optional: a second opinion from a local model
 
 Off by default, and not used for any number in the benchmark. With `--llm-model <name>` the tool asks a model running in [Ollama](https://ollama.com) on the same machine about fields that are already under the threshold. Nothing is sent anywhere else: the code refuses any address that is not localhost. A model answer never clears a field from review by itself. It fills a blank at confidence 0.5 (still flagged, marked as a model suggestion), or adds a little confidence when it agrees with what the code already found. A suggested value that is not printed on the page is refused, so the model cannot invent one.
@@ -129,7 +145,7 @@ Plus the benchmark report, so the accuracy claim can be checked and rerun.
 Short version, full list in [LIMITATIONS.md](LIMITATIONS.md):
 
 - Tested on synthetic invoices only. Real documents from a new vendor will be harder than the standard layouts.
-- No OCR. Scans are reported, not read.
+- No OCR. Scans with no text layer are reported, not read. Tilted pages that do have a text layer are straightened and read.
 - English label wording. Unknown wording gives a blank, flagged field, not a guess.
 - The seller's name is rarely labelled on an invoice. It is the weakest field, and the one place the stress test produced confident wrong answers.
 - Confidence scores are weights chosen by hand, not calibrated probabilities.
