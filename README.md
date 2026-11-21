@@ -84,6 +84,46 @@ write_workbook(results, "out.xlsx", threshold=0.8)
 print(results[0].get("total").value, results[0].get("total").confidence)
 ```
 
+## Run as a service
+
+The same extractor behind a small HTTP API (FastAPI). One PDF per request.
+
+```
+.venv\Scripts\python -m pip install -e ".[api]"
+.venv\Scripts\uvicorn pdf_to_excel.api:app --port 8000
+```
+
+Or in Docker (slim Python image, runs as a non-root user):
+
+```
+docker build -t pdf-to-excel .
+docker run --rm -p 8000:8000 pdf-to-excel
+```
+
+Then:
+
+```
+curl localhost:8000/health
+curl -F "file=@samples/invoices/08_total_does_not_add_up.pdf" localhost:8000/extract
+curl -F "file=@samples/invoices/01_classic_us.pdf" "localhost:8000/extract.xlsx?threshold=0.9" -o out.xlsx
+```
+
+| Endpoint | Returns |
+|---|---|
+| `GET /health` | `{"status": "ok", "version": "0.1.0"}` |
+| `POST /extract` | JSON: status, every field with its value, confidence, page and reasons, the line items, the review list (the Review sheet rows) and the checks that ran |
+| `POST /extract.xlsx` | The same four-sheet workbook the CLI writes, for that one PDF |
+
+`threshold` (0 to 1, default 0.80) works the same as `--threshold`. A file that is not a PDF, an image-only scan (`NEEDS OCR`), or a PDF that cannot be read gets a 422 with the status and the reason. Uploads over 20 MB get a 413. Interactive docs are at `/docs` while the server runs.
+
+Sample 08 returns, in part:
+
+```
+"status": "REVIEW",
+"total": {"value": "134447.66", "confidence": 0.582, "page": 1,
+          "reasons": ["subtotal + tax does not equal total (127950.15 + 6397.51 vs 134447.66)"]}
+```
+
 ## How it works
 
 Everything is deterministic Python on top of `pdfplumber`. No model is involved unless you switch one on.
