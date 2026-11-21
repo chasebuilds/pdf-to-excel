@@ -2,6 +2,8 @@
 
 Turns a folder of invoice PDFs into one Excel workbook, with a confidence score on every field and a review sheet that lists anything doubtful and why.
 
+![An invoice PDF on the left and the extracted fields with confidence scores on the right](docs/preview.png)
+
 No per-vendor templates. No cloud service. The PDFs never leave the machine.
 
 ## Measured result
