@@ -69,6 +69,7 @@ That last command reads the nine sample PDFs and writes the sample workbook. Oth
 ```
 pdf-to-excel my_invoices/ -o out.xlsx --threshold 0.9     # stricter: more goes to review
 pdf-to-excel my_invoices/ -o out.xlsx --json out.json     # also write raw results
+pdf-to-excel my_invoices/ -o out.xlsx --json -            # print raw results to stdout (summary goes to stderr)
 pdf-to-excel my_invoices/ -o out.xlsx --audit-sample 10   # spot check 10 passed invoices
 python -m pytest                                          # tests, all offline
 python -m pytest --cov                                    # tests with a coverage report

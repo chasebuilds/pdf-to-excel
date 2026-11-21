@@ -81,6 +81,23 @@ def test_cli_writes_workbook_and_json(batch, tmp_path, capsys):
     assert "3 files" in capsys.readouterr().out
 
 
+def test_cli_json_dash_prints_results_to_stdout(tmp_path, capsys, monkeypatch):
+    monkeypatch.chdir(tmp_path)  # so a stray file named "-" would show up here
+    samples = Path(__file__).resolve().parent.parent / "samples" / "invoices"
+    out = tmp_path / "result.xlsx"
+    assert main([str(samples), "-o", str(out), "--json", "-"]) == 0
+    captured = capsys.readouterr()
+    data = json.loads(captured.out)  # stdout is pure JSON, nothing else
+    assert [d["file"] for d in data] == sorted(p.name for p in samples.glob("*.pdf"))
+    by_file = {d["file"]: d for d in data}
+    assert by_file["01_classic_us.pdf"]["status"] == "OK"
+    assert by_file["08_total_does_not_add_up.pdf"]["status"] == "REVIEW"
+    assert by_file["09_scanned_image_only.pdf"]["status"] == "NEEDS OCR"
+    assert by_file["02_euro_comma_decimals.pdf"]["total"] == "117514.63"
+    assert "9 files" in captured.err
+    assert out.exists() and not (tmp_path / "-").exists()
+
+
 def test_cli_errors_on_missing_or_empty_input(tmp_path):
     assert main([str(tmp_path / "nope")]) == 2
     assert main([str(tmp_path)]) == 2

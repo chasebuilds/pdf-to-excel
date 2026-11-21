@@ -30,7 +30,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_THRESHOLD,
         help=f"fields below this confidence go to the Review sheet (default {DEFAULT_THRESHOLD})",
     )
-    p.add_argument("--json", type=Path, help="also write the raw results as JSON")
+    p.add_argument(
+        "--json",
+        type=Path,
+        metavar="PATH",
+        help="also write the raw results as JSON; '-' prints them to stdout "
+        "and moves the summary line to stderr",
+    )
     p.add_argument(
         "--audit-sample",
         type=int,
@@ -63,14 +69,21 @@ def main(argv: list[str] | None = None) -> int:
         results.append(result)
     check_batch(results)
     out = write_workbook(results, args.output, args.threshold, audit_sample=args.audit_sample)
-    if args.json:
-        args.json.write_text(json.dumps([r.as_dict() for r in results], indent=2), encoding="utf-8")
     statuses = [status_of(r, args.threshold) for r in results]
+    to_stdout = str(args.json) == "-"
+    if args.json:
+        payload = [{**r.as_dict(), "status": s} for r, s in zip(results, statuses, strict=True)]
+        text = json.dumps(payload, indent=2)
+        if to_stdout:
+            print(text)
+        else:
+            args.json.write_text(text, encoding="utf-8")
     other = sum(1 for s in statuses if s not in ("OK", "REVIEW", "NEEDS OCR", "ERROR"))
     print(
         f"{len(results)} files -> {out}  |  OK {statuses.count('OK')}, "
         f"REVIEW {statuses.count('REVIEW')}, NEEDS OCR {statuses.count('NEEDS OCR')}, "
-        f"ERROR {statuses.count('ERROR')}, other not read {other}"
+        f"ERROR {statuses.count('ERROR')}, other not read {other}",
+        file=sys.stderr if to_stdout else sys.stdout,
     )
     return 0
 
