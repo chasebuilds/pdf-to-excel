@@ -16,3 +16,4 @@ benchmark/data/
 # default CLI output when no -o is given
 /invoices.xlsx
 ~$*.xlsx
+_site/

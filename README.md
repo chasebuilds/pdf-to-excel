@@ -2,9 +2,11 @@
 
 [![ci](https://github.com/chasebuilds/pdf-to-excel/actions/workflows/ci.yml/badge.svg)](https://github.com/chasebuilds/pdf-to-excel/actions/workflows/ci.yml) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) [![MIT license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-Turns a folder of invoice PDFs into one Excel workbook, with a confidence score on every field and a review sheet that lists anything doubtful and why.
+**[Live demo: try it in your browser](https://chasebuilds.github.io/pdf-to-excel/)**. Drop in your own file or run the bundled sample with one click. The real package runs in the page with Pyodide, so files never leave your browser.
 
-![An invoice PDF on the left and the extracted fields with confidence scores on the right](docs/preview.png)
+[![The live demo after running the sample: the tool's summary, result tabs and output table](docs/demo.png)](https://chasebuilds.github.io/pdf-to-excel/)
+
+Turns a folder of invoice PDFs into one Excel workbook, with a confidence score on every field and a review sheet that lists anything doubtful and why.
 
 No per-vendor templates. No cloud service. The PDFs never leave the machine.
 
@@ -24,6 +26,8 @@ The numbers below are written into this file by the benchmark script from a real
 <!-- benchmark:end -->
 
 How to read it: the standard layouts are ordinary, clean invoices in ten different designs, two of which the extractor never saw during development. The stress layouts were built to break it. On those it gets a lot wrong, which is expected. What matters is the last column: when it was wrong, the value went to the review sheet instead of being passed off as fine.
+
+![An invoice PDF on the left and the extracted fields with confidence scores on the right](docs/preview.png)
 
 ## Before and after
 
