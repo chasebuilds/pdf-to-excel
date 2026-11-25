@@ -204,3 +204,11 @@ Short version, full list in [LIMITATIONS.md](LIMITATIONS.md):
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## More from Chase Builds
+
+- **[excel-cleaner-pro](https://github.com/chasebuilds/excel-cleaner-pro)**: Cleans messy spreadsheets and logs every change, so nothing disappears quietly. ([live demo](https://chasebuilds.github.io/excel-cleaner-pro/))
+- **[transaction-categorizer](https://github.com/chasebuilds/transaction-categorizer)**: Sorts bank and card transactions into categories and builds the monthly summary. ([live demo](https://chasebuilds.github.io/transaction-categorizer/))
+- **[data-merger](https://github.com/chasebuilds/data-merger)**: Combines customer lists with different columns into one record per customer. 0 false merges on 28,512 rows. ([live demo](https://chasebuilds.github.io/data-merger/))
+
+[All projects, sorted by industry](https://github.com/chasebuilds) · [chasebuilds.github.io](https://chasebuilds.github.io)
