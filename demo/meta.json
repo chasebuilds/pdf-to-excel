@@ -1,0 +1,7 @@
+{
+  "title": "PDF to Excel: Invoice PDFs to a checked Excel workbook | Chase Builds",
+  "description": "Turn invoice PDFs into an Excel workbook with header fields, line items, a confidence score per field and a review sheet for doubtful values. In your browser.",
+  "url": "https://chasebuilds.github.io/pdf-to-excel/",
+  "image": "docs/demo.png",
+  "repo": "pdf-to-excel"
+}
